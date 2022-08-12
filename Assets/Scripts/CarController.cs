@@ -19,19 +19,30 @@ public class CarController : MonoBehaviour
     private bool accelarateInput;
     private float turnInput;
 
+    public TrackZone curTrackZone;
+    public int zonePassed;
+    public int racePosition;
+    public int curLap;
+
     public Rigidbody rig;
 
     private void Start()
     {
         startModelOffset = carModel.transform.localPosition;
+        GameManager.instance.cars.Add(this);
     }
 
     private void Update()
     {
-        curYRot += turnInput * turnSpeed * Time.deltaTime;
+        float turnRate = Vector3.Dot(rig.velocity.normalized, carModel.forward);
+        turnRate = Mathf.Abs(turnRate);
+
+        curYRot += turnInput * turnSpeed * turnRate * Time.deltaTime;
         
         carModel.position = transform.position + startModelOffset;
-        carModel.eulerAngles = new Vector3(0, curYRot, 0);
+        //carModel.eulerAngles = new Vector3(0, curYRot, 0);
+
+        CheckGround();
     }
 
     private void FixedUpdate()
@@ -40,6 +51,23 @@ public class CarController : MonoBehaviour
         {
             rig.AddForce(carModel.forward * acceleration, ForceMode.Acceleration);
         }
+    }
+
+    void CheckGround()
+    {
+        Ray ray = new Ray(transform.position + new Vector3(0f, -0.75f, 0f), Vector3.down);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, 1f))
+        {
+            carModel.up = hit.normal;
+        }
+        else
+        {
+            carModel.up = Vector3.up;
+        }
+
+        carModel.Rotate(new Vector3(0f, curYRot, 0f), Space.Self);
     }
 
     public void OnAcclerateInput(InputAction.CallbackContext context)
